@@ -1,4 +1,5 @@
 use schemars::JsonSchema;
+use sg_std::Response;
 use std::fmt;
 use std::ops::{AddAssign, Sub};
 
@@ -6,7 +7,7 @@ use std::ops::{AddAssign, Sub};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     ensure, ensure_ne, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, DistributionMsg,
-    Empty, Env, MessageInfo, Order, Response, StakingMsg, StdResult,
+    Empty, Env, MessageInfo, Order, StakingMsg, StdResult,
 };
 use cw1::CanExecuteResponse;
 use cw1_whitelist::{
@@ -53,7 +54,7 @@ pub fn execute(
     // Note: implement this function with different type to add support for custom messages
     // and then import the rest of this contract code.
     msg: ExecuteMsg<Empty>,
-) -> Result<Response<Empty>, ContractError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Execute { msgs } => execute_execute(deps, env, info, msgs),
         ExecuteMsg::Freeze {} => Ok(execute_freeze(deps, env, info)?),
@@ -80,7 +81,7 @@ pub fn execute_execute<T>(
     env: Env,
     info: MessageInfo,
     msgs: Vec<CosmosMsg<T>>,
-) -> Result<Response<T>, ContractError>
+) -> Result<Response, ContractError>
 where
     T: Clone + fmt::Debug + PartialEq + JsonSchema,
 {
@@ -172,7 +173,7 @@ pub fn execute_increase_allowance<T>(
     spender: String,
     amount: Coin,
     expires: Option<Expiration>,
-) -> Result<Response<T>, ContractError>
+) -> Result<Response, ContractError>
 where
     T: Clone + fmt::Debug + PartialEq + JsonSchema,
 {
@@ -226,7 +227,7 @@ pub fn execute_decrease_allowance<T>(
     spender: String,
     amount: Coin,
     expires: Option<Expiration>,
-) -> Result<Response<T>, ContractError>
+) -> Result<Response, ContractError>
 where
     T: Clone + fmt::Debug + PartialEq + JsonSchema,
 {
@@ -278,7 +279,7 @@ pub fn execute_set_permissions<T>(
     info: MessageInfo,
     spender: String,
     perm: Permissions,
-) -> Result<Response<T>, ContractError>
+) -> Result<Response, ContractError>
 where
     T: Clone + fmt::Debug + PartialEq + JsonSchema,
 {
@@ -473,7 +474,7 @@ mod tests {
     use cosmwasm_std::testing::{
         mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage,
     };
-    use cosmwasm_std::{coin, coins, OwnedDeps, StakingMsg, SubMsg, Timestamp};
+    use cosmwasm_std::{coin, coins, OwnedDeps, StakingMsg, Timestamp};
 
     use cw1_whitelist::msg::AdminListResponse;
     use cw2::{get_contract_version, ContractVersion};
@@ -1675,6 +1676,8 @@ mod tests {
     }
 
     mod spend {
+        use sg_std::SubMsg;
+
         use super::*;
 
         #[test]
@@ -1883,6 +1886,8 @@ mod tests {
     }
 
     mod custom_msg {
+        use sg_std::SubMsg;
+
         use super::*;
 
         #[test]
