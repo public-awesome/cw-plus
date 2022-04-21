@@ -4,8 +4,7 @@ use std::fmt;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Api, Binary, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Response,
-    StdResult,
+    to_binary, Addr, Api, Binary, Deps, DepsMut, Empty, Env, MessageInfo, StdResult,
 };
 
 use cw1::CanExecuteResponse;
@@ -14,6 +13,7 @@ use cw2::set_contract_version;
 use crate::error::ContractError;
 use crate::msg::{AdminListResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{AdminList, ADMIN_LIST};
+use sg_std::{CosmosMsg, Response, StargazeMsgWrapper};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw1-whitelist";
@@ -46,8 +46,8 @@ pub fn execute(
     info: MessageInfo,
     // Note: implement this function with different type to add support for custom messages
     // and then import the rest of this contract code.
-    msg: ExecuteMsg<Empty>,
-) -> Result<Response<Empty>, ContractError> {
+    msg: ExecuteMsg<StargazeMsgWrapper>,
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Execute { msgs } => execute_execute(deps, env, info, msgs),
         ExecuteMsg::Freeze {} => execute_freeze(deps, env, info),
@@ -55,15 +55,12 @@ pub fn execute(
     }
 }
 
-pub fn execute_execute<T>(
+pub fn execute_execute(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msgs: Vec<CosmosMsg<T>>,
-) -> Result<Response<T>, ContractError>
-where
-    T: Clone + fmt::Debug + PartialEq + JsonSchema,
-{
+    msgs: Vec<CosmosMsg>,
+) -> Result<Response, ContractError> {
     if !can_execute(deps.as_ref(), info.sender.as_ref())? {
         Err(ContractError::Unauthorized {})
     } else {
@@ -145,7 +142,8 @@ pub fn query_can_execute(
 mod tests {
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{coin, coins, BankMsg, StakingMsg, SubMsg, WasmMsg};
+    use cosmwasm_std::{coin, coins, BankMsg, StakingMsg, WasmMsg};
+    use sg_std::{CosmosMsg, SubMsg};
 
     #[test]
     fn instantiate_and_modify_config() {
