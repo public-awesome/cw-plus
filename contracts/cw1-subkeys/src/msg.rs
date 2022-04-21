@@ -1,5 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use sg_std::StargazeMsgWrapper;
 use std::fmt;
 
 use cosmwasm_std::{Coin, CosmosMsg, Empty};
@@ -45,7 +46,7 @@ where
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum QueryMsg<T = Empty>
+pub enum QueryMsg<T = StargazeMsgWrapper>
 where
     T: Clone + fmt::Debug + PartialEq + JsonSchema,
 {

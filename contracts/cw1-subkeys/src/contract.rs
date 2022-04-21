@@ -1,13 +1,13 @@
 use schemars::JsonSchema;
-use sg_std::Response;
+use sg_std::{CosmosMsg, Response, StargazeMsgWrapper};
 use std::fmt;
 use std::ops::{AddAssign, Sub};
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    ensure, ensure_ne, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, DistributionMsg,
-    Empty, Env, MessageInfo, Order, StakingMsg, StdResult,
+    ensure, ensure_ne, to_binary, BankMsg, Binary, Coin, Deps, DepsMut, DistributionMsg, Empty,
+    Env, MessageInfo, Order, StakingMsg, StakingQuery, StdResult,
 };
 use cw1::CanExecuteResponse;
 use cw1_whitelist::{
@@ -53,7 +53,7 @@ pub fn execute(
     info: MessageInfo,
     // Note: implement this function with different type to add support for custom messages
     // and then import the rest of this contract code.
-    msg: ExecuteMsg<Empty>,
+    msg: ExecuteMsg<StargazeMsgWrapper>,
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Execute { msgs } => execute_execute(deps, env, info, msgs),
@@ -76,15 +76,12 @@ pub fn execute(
     }
 }
 
-pub fn execute_execute<T>(
+pub fn execute_execute(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    msgs: Vec<CosmosMsg<T>>,
-) -> Result<Response, ContractError>
-where
-    T: Clone + fmt::Debug + PartialEq + JsonSchema,
-{
+    msgs: Vec<CosmosMsg>,
+) -> Result<Response, ContractError> {
     let cfg = ADMIN_LIST.load(deps.storage)?;
 
     // Not an admin - need to check for permissions
@@ -166,17 +163,14 @@ pub fn check_distribution_permissions(
     Ok(())
 }
 
-pub fn execute_increase_allowance<T>(
+pub fn execute_increase_allowance(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     spender: String,
     amount: Coin,
     expires: Option<Expiration>,
-) -> Result<Response, ContractError>
-where
-    T: Clone + fmt::Debug + PartialEq + JsonSchema,
-{
+) -> Result<Response, ContractError> {
     let cfg = ADMIN_LIST.load(deps.storage)?;
     ensure!(cfg.is_admin(&info.sender), ContractError::Unauthorized {});
 
@@ -220,17 +214,14 @@ where
     Ok(res)
 }
 
-pub fn execute_decrease_allowance<T>(
+pub fn execute_decrease_allowance(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     spender: String,
     amount: Coin,
     expires: Option<Expiration>,
-) -> Result<Response, ContractError>
-where
-    T: Clone + fmt::Debug + PartialEq + JsonSchema,
-{
+) -> Result<Response, ContractError> {
     let cfg = ADMIN_LIST.load(deps.storage)?;
     ensure!(cfg.is_admin(&info.sender), ContractError::Unauthorized {});
 
@@ -273,16 +264,13 @@ where
     Ok(res)
 }
 
-pub fn execute_set_permissions<T>(
+pub fn execute_set_permissions(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     spender: String,
     perm: Permissions,
-) -> Result<Response, ContractError>
-where
-    T: Clone + fmt::Debug + PartialEq + JsonSchema,
-{
+) -> Result<Response, ContractError> {
     let cfg = ADMIN_LIST.load(deps.storage)?;
     ensure!(cfg.is_admin(&info.sender), ContractError::Unauthorized {});
 
@@ -1933,6 +1921,8 @@ mod tests {
     }
 
     mod staking_permission {
+        use sg_std::SubMsg;
+
         use super::*;
 
         #[test]
