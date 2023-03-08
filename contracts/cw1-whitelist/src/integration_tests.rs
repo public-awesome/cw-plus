@@ -1,17 +1,19 @@
 use crate::msg::{AdminListResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use anyhow::{anyhow, Result};
 use assert_matches::assert_matches;
-use cosmwasm_std::{to_binary, Addr, CosmosMsg, Empty, QueryRequest, StdError, WasmMsg, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, CosmosMsg, QueryRequest, StdError, WasmMsg, WasmQuery};
 use cw1::Cw1Contract;
-use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
+use cw_multi_test::{AppResponse, Contract, ContractWrapper};
 use derivative::Derivative;
 use serde::{de::DeserializeOwned, Serialize};
+use sg_multi_test::StargazeApp;
+use sg_std::StargazeMsgWrapper;
 
-fn mock_app() -> App {
-    App::default()
+fn custom_mock_app() -> StargazeApp {
+    StargazeApp::default()
 }
 
-fn contract_cw1() -> Box<dyn Contract<Empty>> {
+fn contract_cw1() -> Box<dyn Contract<StargazeMsgWrapper>> {
     let contract = ContractWrapper::new(
         crate::contract::execute,
         crate::contract::instantiate,
@@ -25,7 +27,7 @@ fn contract_cw1() -> Box<dyn Contract<Empty>> {
 pub struct Suite {
     /// Application mock
     #[derivative(Debug = "ignore")]
-    app: App,
+    app: StargazeApp,
     /// Special account
     pub owner: String,
     /// ID of stored code for cw1 contract
@@ -34,7 +36,7 @@ pub struct Suite {
 
 impl Suite {
     pub fn init() -> Result<Suite> {
-        let mut app = mock_app();
+        let mut app = custom_mock_app();
         let owner = "owner".to_owned();
         let cw1_id = app.store_code(contract_cw1());
 
